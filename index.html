@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz chien — Sellerie Lefeuvre</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #faf9f7; color: #1a1a1a; padding: 2rem 1rem; }
+    .qw { max-width: 620px; margin: 0 auto; }
+    h1.quiz-title { font-size: 20px; font-weight: 500; margin-bottom: 0.5rem; color: #1a1a1a; }
+    .quiz-subtitle { font-size: 15px; color: #666; margin-bottom: 2rem; line-height: 1.5; }
+    .prog-bar { height: 4px; background: #e0ddd8; border-radius: 2px; margin-bottom: 2rem; }
+    .prog-fill { height: 100%; background: #6b5c4e; border-radius: 2px; transition: width .4s ease; }
+    .step { display: none; } .step.active { display: block; }
+    .question { font-size: 17px; font-weight: 500; color: #1a1a1a; margin-bottom: 1.25rem; line-height: 1.5; }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .opt { background: #fff; border: 0.5px solid #ccc; border-radius: 8px; padding: 12px 16px; text-align: left; cursor: pointer; font-size: 15px; color: #1a1a1a; transition: border-color .2s, background .2s; }
+    .opt:hover { background: #f5f3f0; border-color: #999; }
+    .opt.selected { border: 1.5px solid #6b5c4e; background: #f5f3f0; }
+    .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .nbtn { background: transparent; border: 0.5px solid #ccc; border-radius: 8px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: #1a1a1a; }
+    .nbtn:hover { background: #f5f3f0; }
+    .nbtn:disabled { opacity: .3; cursor: default; }
+    .nbtn.pri { background: #6b5c4e; color: #fff; border-color: #6b5c4e; }
+    .nbtn.pri:hover { opacity: .85; }
+    .step-ctr { font-size: 13px; color: #999; }
+    .email-wrap { text-align: center; padding: 1rem 0; }
+    .email-wrap .question { text-align: center; }
+    .email-wrap p { color: #666; margin-bottom: 1.5rem; font-size: 15px; }
+    .email-row { display: flex; gap: 10px; max-width: 420px; margin: 0 auto; }
+    .email-row input { flex: 1; padding: 10px 14px; border: 0.5px solid #ccc; border-radius: 8px; font-size: 15px; }
+    .err { color: #c0392b; font-size: 13px; margin-top: 8px; display: none; }
+    .hint { font-size: 12px; color: #999; margin-top: 1rem; line-height: 1.5; }
+    .rcard { border: 0.5px solid #e0ddd8; border-radius: 12px; padding: 1.5rem; background: #fff; }
+    .rlabel { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
+    .rtitle { font-size: 21px; font-weight: 500; margin-bottom: .75rem; color: #1a1a1a; line-height: 1.3; }
+    .rdesc { font-size: 15px; color: #555; line-height: 1.65; margin-bottom: 1.25rem; }
+    .rprod { background: #f5f3f0; border-radius: 8px; padding: 1rem 1.1rem; margin-bottom: 1rem; }
+    .rprod-label { font-size: 12px; color: #999; margin-bottom: 5px; }
+    .rprod-name { font-size: 15px; font-weight: 500; color: #1a1a1a; line-height: 1.5; }
+    .colors-block { margin-bottom: 1.25rem; }
+    .colors-intro { font-size: 14px; color: #555; margin-bottom: 10px; line-height: 1.5; }
+    .colors-label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+    .colors-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .color-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .color-dot { width: 32px; height: 32px; border-radius: 50%; border: 0.5px solid #e0ddd8; }
+    .color-name { font-size: 11px; color: #666; text-align: center; max-width: 44px; line-height: 1.2; }
+    .multi-cta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+    .rcta { display: block; background: #6b5c4e; color: #fff; border-radius: 8px; padding: 13px 24px; font-size: 15px; text-align: center; cursor: pointer; border: none; width: 100%; text-decoration: none; }
+    .rcta:hover { opacity: .85; }
+    .rcta.secondary { background: transparent; color: #1a1a1a; border: 0.5px solid #ccc; }
+    .rcta.secondary:hover { background: #f5f3f0; }
+    .email-ok { background: #f5f3f0; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #666; margin-top: 1rem; display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+<div class="qw">
+
+  <h1 class="quiz-title">Quel équipement de promenade est vraiment fait pour votre chien ?</h1>
+  <p class="quiz-subtitle">Répondez à 6 questions et débloquez vos recommandations personnalisées.</p>
+
+  <div class="prog-bar"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+
+  <!-- =====================================================
+       QUESTION 1 — comportement en promenade
+       data-v = valeur interne, ne pas modifier
+       ===================================================== -->
+  <div class="step active" id="s1">
+    <p class="question">Comment votre chien se comporte-t-il en promenade ?</p>
+    <div class="options">
+      <button class="opt" data-q="1" data-v="calm">Il marche bien en laisse, sans tirer</button>
+      <button class="opt" data-q="1" data-v="pull">Il tire fort en laisse et régulièrement</button>
+      <button class="opt" data-q="1" data-v="mord">Il mâche ou mordille sa laisse</button>
+      <button class="opt" data-q="1" data-v="fugue">Il cherche à s'échapper dès qu'il en a l'occasion</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" disabled>← Précédent</button>
+      <span class="step-ctr">1 / 6</span>
+      <button class="nbtn pri" id="n1" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       QUESTION 2 — taille
+       ===================================================== -->
+  <div class="step" id="s2">
+    <p class="question">Quelle est la taille de votre chien ?</p>
+    <div class="options">
+      <button class="opt" data-q="2" data-v="small">Petit — moins de 10 kg</button>
+      <button class="opt" data-q="2" data-v="med">Moyen — 10 à 25 kg</button>
+      <button class="opt" data-q="2" data-v="large">Grand — 25 à 40 kg</button>
+      <button class="opt" data-q="2" data-v="xlarge">Très grand — plus de 40 kg</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" id="p2">← Précédent</button>
+      <span class="step-ctr">2 / 6</span>
+      <button class="nbtn pri" id="n2" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       QUESTION 3 — type de balade
+       ===================================================== -->
+  <div class="step" id="s3">
+    <p class="question">Quel type de balade faites-vous principalement ?</p>
+    <div class="options">
+      <button class="opt" data-q="3" data-v="city">Balades urbaines, en ville</button>
+      <button class="opt" data-q="3" data-v="nature">Promenades nature, chemins variés</button>
+      <button class="opt" data-q="3" data-v="sport">Randonnées longues et sportives</button>
+      <button class="opt" data-q="3" data-v="mix">Un mix selon les jours</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" id="p3">← Précédent</button>
+      <span class="step-ctr">3 / 6</span>
+      <button class="nbtn pri" id="n3" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       QUESTION 4 — type de poil
+       ===================================================== -->
+  <div class="step" id="s4">
+    <p class="question">Quel est le type de poil de votre chien ?</p>
+    <div class="options">
+      <button class="opt" data-q="4" data-v="ras">Poil ras — dalmatien, dobermann, boxer…</button>
+      <button class="opt" data-q="4" data-v="mi">Poil mi-long ou dense — labrador, border collie…</button>
+      <button class="opt" data-q="4" data-v="long">Poil long ou bouclé — caniche, cocker, golden…</button>
+      <button class="opt" data-q="4" data-v="dur">Poil dur ou frisé — schnauzer, fox-terrier…</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" id="p4">← Précédent</button>
+      <span class="step-ctr">4 / 6</span>
+      <button class="nbtn pri" id="n4" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       QUESTION 5 — couleur du pelage
+       ===================================================== -->
+  <div class="step" id="s5">
+    <p class="question">Quelle est la couleur du pelage de votre chien ?</p>
+    <div class="options">
+      <button class="opt" data-q="5" data-v="noir">Noire ou très foncée</button>
+      <button class="opt" data-q="5" data-v="fauve">Fauve, dorée, caramel, rousse</button>
+      <button class="opt" data-q="5" data-v="clair">Blanche, crème, grise ou argentée</button>
+      <button class="opt" data-q="5" data-v="bico">Bicolore ou tachetée</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" id="p5">← Précédent</button>
+      <span class="step-ctr">5 / 6</span>
+      <button class="nbtn pri" id="n5" disabled>Suivant →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       QUESTION 6 — priorité
+       ===================================================== -->
+  <div class="step" id="s6">
+    <p class="question">Qu'est-ce qui compte le plus pour vous dans l'équipement de votre chien ?</p>
+    <div class="options">
+      <button class="opt" data-q="6" data-v="confort">Le confort et la sécurité avant tout</button>
+      <button class="opt" data-q="6" data-v="esthet">L'esthétique et l'élégance</button>
+      <button class="opt" data-q="6" data-v="pratique">La praticité au quotidien</button>
+      <button class="opt" data-q="6" data-v="solide">La solidité et la durabilité</button>
+    </div>
+    <div class="nav">
+      <button class="nbtn" id="p6">← Précédent</button>
+      <span class="step-ctr">6 / 6</span>
+      <button class="nbtn pri" id="n6" disabled>Voir mes résultats →</button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       ÉTAPE EMAIL — modifie les textes ici
+       ===================================================== -->
+  <div class="step" id="s-email">
+    <div class="email-wrap">
+      <p class="question">Votre profil est prêt !</p>
+      <p>Entrez votre adresse email pour débloquer vos recommandations personnalisées.</p>
+      <div class="email-row">
+        <input type="email" id="ei" placeholder="votre@email.com" />
+        <button class="nbtn pri" id="sub">Débloquer</button>
+      </div>
+      <p class="err" id="ee">Veuillez entrer une adresse email valide.</p>
+      <p class="hint">Pas de spam. Juste vos résultats et, de temps en temps, des conseils de La Sellerie. Vous pouvez vous désabonner à tout moment.</p>
+    </div>
+  </div>
+
+  <!-- Résultat (généré dynamiquement) -->
+  <div class="step" id="s-result">
+    <div class="rcard">
+      <p class="rlabel">Votre profil</p>
+      <p class="rtitle" id="rtitle"></p>
+      <p class="rdesc" id="rdesc"></p>
+      <div class="rprod" id="rprod1" style="display:none">
+        <p class="rprod-label" id="rprod1-label"></p>
+        <p class="rprod-name" id="rprod1-name"></p>
+      </div>
+      <div class="rprod" id="rprod2" style="display:none">
+        <p class="rprod-label" id="rprod2-label"></p>
+        <p class="rprod-name" id="rprod2-name"></p>
+      </div>
+      <div class="colors-block" id="colors-block" style="display:none">
+        <p class="colors-intro" id="colors-intro"></p>
+        <p class="colors-label">Doublures en cuir conseillées</p>
+        <div class="colors-row" id="colors-row"></div>
+      </div>
+      <div class="multi-cta" id="cta-wrap"></div>
+      <div class="email-ok">
+        ✓ <span id="edisplay"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ans = {};
+const total = 6;
+
+/* =====================================================
+   COULEURS DES DOUBLURES EN CUIR
+   hex = code couleur approximatif pour l'affichage
+   label = nom affiché sous la pastille
+   ===================================================== */
+const colorMap = {
+  champagne:  { hex: '#F0E6B0', label: 'Champagne' },
+  soleil:     { hex: '#E8A020', label: 'Soleil' },
+  mandarine:  { hex: '#E86010', label: 'Mandarine' },
+  orange:     { hex: '#D85010', label: 'Orange' },
+  framboise:  { hex: '#C83060', label: 'Framboise' },
+  rouge:      { hex: '#B82020', label: 'Rouge' },
+  tomette:    { hex: '#C04030', label: 'Tomette' },
+  prune:      { hex: '#602060', label: 'Prune' },
+  lilas:      { hex: '#B090C0', label: 'Lilas' },
+  violine:    { hex: '#702080', label: 'Violine' },
+  fuchsia:    { hex: '#D02080', label: 'Fuchsia' },
+  saumon:     { hex: '#E89080', label: 'Saumon' },
+  bonbon:     { hex: '#E07090', label: 'Bonbon' },
+  dragee:     { hex: '#E8B0B0', label: 'Dragée' },
+  blanc:      { hex: '#E8E8E0', label: 'Blanc' },
+  alezan:     { hex: '#A06020', label: 'Alezan' },
+  cognac:     { hex: '#C08030', label: 'Cognac' },
+  chocolat:   { hex: '#5A3020', label: 'Chocolat' },
+  noir:       { hex: '#202020', label: 'Noir' },
+  marine:     { hex: '#203060', label: 'Marine' },
+  cobalt:     { hex: '#2040A0', label: 'Cobalt' },
+  electrique: { hex: '#1060C0', label: 'Électrique' },
+  bleuet:     { hex: '#4080C0', label: 'Bleuet' },
+  canard:     { hex: '#107080', label: 'Canard' },
+  sapin:      { hex: '#204830', label: 'Sapin' },
+  turquoise:  { hex: '#208070', label: 'Turquoise' },
+  aqua:       { hex: '#40B0A0', label: 'Aqua' },
+  menthe:     { hex: '#40A878', label: 'Menthe' },
+};
+
+/* =====================================================
+   ASSOCIATIONS ROBE → DOUBLURES CONSEILLÉES
+   intro = texte affiché au-dessus des pastilles
+   colors = liste de clés du colorMap ci-dessus
+   ===================================================== */
+const robeColors = {
+  noir:  {
+    intro: "Le noir se marie avec tout — c'est l'occasion de jouer la couleur pop ou le contraste élégant.",
+    colors: ['champagne','soleil','cobalt','fuchsia','rouge','electrique','turquoise','bleuet']
+  },
+  fauve: {
+    intro: "Robes fauves et caramel s'accordent à merveille avec les tons chauds et profonds.",
+    colors: ['cognac','alezan','chocolat','tomette','prune','violine','sapin','marine']
+  },
+  clair: {
+    intro: "Les robes claires révèlent magnifiquement les tons pastel doux et les contrastes subtils.",
+    colors: ['dragee','saumon','bonbon','lilas','menthe','aqua','bleuet','champagne']
+  },
+  bico:  {
+    intro: "Une robe bicolore offre plein de possibilités — jouez avec l'une ou l'autre des teintes.",
+    colors: ['framboise','orange','canard','sapin','violine','soleil','marine','noir']
+  },
+};
+
+/* =====================================================
+   PROFILS & RÉSULTATS
+   title      = titre du profil affiché
+   desc       = texte descriptif
+   prods      = liste de produits recommandés (1 ou 2)
+     label    = petit titre au-dessus du bloc produit
+     name     = description du produit
+     url      = lien vers la boutique
+     cta      = texte du bouton
+     primary  = true = bouton principal (foncé), false = secondaire (outline)
+   showColors = true = afficher les pastilles de couleur doublure
+   ===================================================== */
+const profiles = {
+
+  fugueur: {
+    title: 'Le profil chien fugueur',
+    desc: "Votre chien a le don de disparaître au mauvais moment. Le collier porte-médaille artisanal est votre meilleur allié : cousu rond pour ne pas accrocher dans le poil, il porte une médaille gravée avec vos coordonnées pour des retrouvailles rapides et sereines.",
+    prods: [
+      {
+        label: 'Notre recommandation',
+        name: 'Collier porte-médaille en cuir cousu main + médaille gravée avec vos coordonnées — fait main, robuste et personnalisable.',
+        url: 'https://sellerielefeuvre.fr/produit/collier-porte-medaille-en-cuir-cousu-rond/',
+        cta: 'Voir le collier porte-médaille',
+        primary: true
+      }
+    ],
+    showColors: false
+  },
+
+  mordilleur: {
+    title: 'Le profil résistance & élégance',
+    desc: "Votre chien est un mordilleur invétéré et vous en avez assez de changer de laisse. La laisse cuir et chaînette est faite pour vous : résistante aux crocs, elle garde toute l'élégance du cuir artisanal. Complétez avec un collier sur-mesure dans les coloris qui subliment sa robe.",
+    prods: [
+      {
+        label: 'La laisse',
+        name: 'Laisse en cuir et chaînette — résistante aux mordillements, durable et élégante.',
+        url: 'https://sellerielefeuvre.fr/produit/laisse-en-cuir-et-chainette/',
+        cta: 'Voir la laisse cuir et chaînette',
+        primary: true
+      },
+      {
+        label: 'Le collier assorti',
+        name: 'Collier en cuir sur-mesure — à choisir dans les coloris conseillés ci-dessous.',
+        url: 'https://sellerielefeuvre.fr/categorie-produit/pour-le-chien/colliers/',
+        cta: 'Voir les colliers',
+        primary: false
+      }
+    ],
+    showColors: true
+  },
+
+  confort: {
+    title: 'Le profil confort & sécurité',
+    desc: "Votre chien tire fort en balade et un collier seul peut mettre une pression inutile sur sa trachée. Associez un harnais (à choisir dans votre boutique habituelle selon sa morphologie) à la laisse multi-positions Sellerie Lefeuvre : adaptez la longueur selon vos besoins, en ville comme en nature.",
+    prods: [
+      {
+        label: 'Notre recommandation',
+        name: 'Laisse multi-positions en cuir — polyvalente, adaptable à toutes les configurations de balade.',
+        url: 'https://sellerielefeuvre.fr/produit/laisse-en-cuir-a-reglage-multiposition/',
+        cta: 'Voir la laisse multi-positions',
+        primary: true
+      }
+    ],
+    showColors: false
+  },
+
+  aventurier: {
+    title: 'Le profil aventurier & pratique',
+    desc: "Vos balades sont variées et votre chien a besoin d'un équipement polyvalent, toujours à portée de main. La laisse multi-positions s'enroule en bandoulière pour avoir les mains libres, et l'étui de sac à déjection s'accroche directement dessus pour laisser vos espaces de balades propres.",
+    prods: [
+      {
+        label: 'La laisse',
+        name: "Laisse multi-positions en cuir — s'enroule autour du buste en bandoulière pour les mains libres.",
+        url: 'https://sellerielefeuvre.fr/produit/laisse-en-cuir-a-reglage-multiposition/',
+        cta: 'Voir la laisse multi-positions',
+        primary: true
+      },
+      {
+        label: "L'accessoire pratique",
+        name: "Étui sac à déjection en cuir — s'accroche directement sur la laisse.",
+        url: 'https://sellerielefeuvre.fr/produit/etui-de-sac-a-dejection-en-cuir/',
+        cta: "Voir l'étui sac à déjection",
+        primary: false
+      }
+    ],
+    showColors: false
+  },
+
+  elegance: {
+    title: 'Le profil élégance au quotidien',
+    desc: "Votre chien est agréable en balade et son pelage mérite d'être sublimé par une couleur qui le fait ressortir. Un collier artisanal sur-mesure associé à une laisse assortie, dans les coloris qui lui vont le mieux, fera de chaque sortie un vrai plaisir pour les yeux, tout en restant confortable pour votre compagnon de promenade.",
+    prods: [
+      {
+        label: 'Notre recommandation',
+        name: "Collier en cuir sur-mesure + laisse assortie — large choix de coloris et de doublures pour s'adapter à la robe de votre chien.",
+        url: 'https://sellerielefeuvre.fr/categorie-produit/pour-le-chien/',
+        cta: 'Voir colliers & laisses',
+        primary: true
+      }
+    ],
+    showColors: true
+  }
+
+};
+
+/* ===================================================== */
+/* NE PAS MODIFIER EN DESSOUS DE CETTE LIGNE             */
+/* ===================================================== */
+
+function setProgress(n) {
+  document.getElementById('pf').style.width = ((n - 1) / total * 100) + '%';
+}
+
+function showStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('s' + id).classList.add('active');
+  if (typeof id === 'number') setProgress(id);
+}
+
+document.querySelectorAll('.opt').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const q = this.dataset.q;
+    ans[q] = this.dataset.v;
+    document.querySelectorAll('.opt[data-q="' + q + '"]').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+    const nb = document.getElementById('n' + q);
+    if (nb) nb.disabled = false;
+  });
+});
+
+for (let i = 1; i <= total; i++) {
+  const nb = document.getElementById('n' + i);
+  if (nb) nb.addEventListener('click', () => { i < total ? showStep(i + 1) : showStep('-email'); });
+  const pb = document.getElementById('p' + i);
+  if (pb) pb.addEventListener('click', () => showStep(i - 1));
+}
+
+function computeProfile() {
+  const behav = ans['1'], prio = ans['6'];
+  if (behav === 'fugue') return 'fugueur';
+  if (behav === 'mord')  return 'mordilleur';
+  if (behav === 'pull')  return 'confort';
+  if (prio === 'pratique' || prio === 'solide') return 'aventurier';
+  return 'elegance';
+}
+
+function renderColors(robe) {
+  const data = robeColors[robe] || robeColors['bico'];
+  const block = document.getElementById('colors-block');
+  document.getElementById('colors-intro').textContent = data.intro;
+  const row = document.getElementById('colors-row');
+  row.innerHTML = '';
+  data.colors.forEach(function(key) {
+    const c = colorMap[key];
+    if (!c) return;
+    const chip = document.createElement('div');
+    chip.className = 'color-chip';
+    chip.innerHTML = '<div class="color-dot" style="background:' + c.hex + '"></div><span class="color-name">' + c.label + '</span>';
+    row.appendChild(chip);
+  });
+  block.style.display = 'block';
+}
+
+function renderProds(prods) {
+  const p1 = document.getElementById('rprod1');
+  const p2 = document.getElementById('rprod2');
+  p1.style.display = 'none'; p2.style.display = 'none';
+  if (prods[0]) {
+    document.getElementById('rprod1-label').textContent = prods[0].label;
+    document.getElementById('rprod1-name').textContent  = prods[0].name;
+    p1.style.display = 'block';
+  }
+  if (prods[1]) {
+    document.getElementById('rprod2-label').textContent = prods[1].label;
+    document.getElementById('rprod2-name').textContent  = prods[1].name;
+    p2.style.display = 'block';
+  }
+}
+
+function renderCTAs(prods) {
+  const wrap = document.getElementById('cta-wrap');
+  wrap.innerHTML = '';
+  prods.forEach(function(p) {
+    const btn = document.createElement('button');
+    btn.className = 'rcta' + (p.primary ? '' : ' secondary');
+    btn.textContent = p.cta;
+    btn.addEventListener('click', function() { window.open(p.url, '_blank'); });
+    wrap.appendChild(btn);
+  });
+}
+
+document.getElementById('sub').addEventListener('click', function() {
+  const email = document.getElementById('ei').value.trim();
+  const err = document.getElementById('ee');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+
+  const key = computeProfile();
+  const p = profiles[key];
+  document.getElementById('rtitle').textContent = p.title;
+  document.getElementById('rdesc').textContent  = p.desc;
+  renderProds(p.prods);
+  renderCTAs(p.prods);
+
+  if (p.showColors) renderColors(ans['5']);
+  else document.getElementById('colors-block').style.display = 'none';
+
+  document.getElementById('edisplay').textContent = email + ' — résultats enregistrés';
+  document.getElementById('pf').style.width = '100%';
+  showStep('-result');
+});
+</script>
+</body>
+</html>
